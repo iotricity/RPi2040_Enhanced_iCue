@@ -28,7 +28,7 @@
     Set both channels on the controller to 6 Strips / 60 LEDs. Change the settings for Channel 1 to values show below.
 
     Channel 1:      Strip #1 (00..09) --> CPU Temp (also reference for brightness set on Green channel)
-                    Strip #2 (10..19) --> GPU Temp (not used for now)
+                    Strip #2 (10..19) --> GPU Temp (used for case fan ring)
                     Strip #3 (20..29) --> Fan 1..Fan 3 Color
                     Strip #4 (30..39) --> Fan 1..Fan 3 & Fan CPU sparkle/heartbeat color
                     Strip #5 (40..49) --> Fan CPU Color
@@ -83,7 +83,7 @@
 
 CRGB ledsiCue1[LEDS_ICUE_STRIP];     // Create LED array for iCue LED strip 1 (color control data)
 CRGB ledsiCue2[LEDS_ICUE_STRIP];     // Create LED array for iCue LED strip 2 (normal output)
-//CRGB ledsXiao[LEDS_XIAO];            // Create LED array for Xiao onboard WS2812 --> Disabled due to limit of 7 pins for FastLED
+//CRGB ledsXiao[LEDS_XIAO];            // Create LED array for Xiao onboard WS2812 --> Disabled due to limit of 8 channels for FastLED
 CRGB ledsFan123[EXT_LEDS_FAN1 + EXT_LEDS_FAN2 + EXT_LEDS_FAN3];    // Create LED array for Fan 1, Fan 2 and Fan 3 as single array
 CRGB ledsExtra[EXT_LEDS_EXTRA];      // Create LED array for Fan 4
 CRGB ledsCPU[EXT_LEDS_CPU];          // Create LED array for CPU
@@ -144,6 +144,7 @@ void setup() {
 	ledController.addLEDs(0, ledsiCue1, LEDS_ICUE_STRIP);
 	ledController.addLEDs(1, ledsiCue2, LEDS_ICUE_STRIP);
 
+  // Reset sparkle data
   for(int i = 0; i< SPARKLES_NUM; i++) {
     sparkles[i][0] = -1;      // Sparkle brightness, -1 means available for new position
     sparkles[i][1] = 0;       // Sparkle position
@@ -172,7 +173,7 @@ void loop() {
     digitalWrite(LED_RGBG, HIGH);
   else
     digitalWrite(LED_RGBG, LOW);
-  // If no serial data is received after 3 seconds, set to "safe mode" to stop iCue Circus Lights
+  // If no serial data is received after 3 seconds, set to "safe mode" to stop default iCue Circus Lights
   if(millis() - dlySerialData >= 3000) {
     hasSerialData = false;
     digitalWrite(LED_RGBG, HIGH);
@@ -186,11 +187,11 @@ void loop() {
     //ledsXiao[0] = ledsiCue1[0];
     //ledsXiao[0].fadeToBlackBy(192); // Dim the onboard WS2812 (limited current)
 
-    get_cpuheat();
-    run_sparkles();
-    run_heartbeat();
-    run_heatgauge();
-    run_casefans();
+    get_cpuheat();      // Get CPU temperature
+    run_sparkles();     // Process sparkling on AIO fans
+    run_heartbeat();    // Process heartbeat on CPU
+    run_heatgauge();    // Update case fan ring
+    run_casefans();     // Process sparkling on case/extra fans
 
     // Change overall brightness based on light sensor
     rawbrightness = analogRead(EXT_PIN_LIGHT);
